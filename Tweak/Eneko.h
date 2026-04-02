@@ -1,57 +1,18 @@
 //
 //  Eneko.h
-//  Eneko
+//  Eneko - Interface declarations for hooked classes
 //
 //  Created by Alexandra (@Traurige)
 //
 
-#import <substrate.h>
-#import <AVFoundation/AVFoundation.h>
-#import <UIKit/UIKit.h>
-#import "GcUniversal/GcImagePickerUtils.h"
-#import "../Preferences/PreferenceKeys.h"
-#import "../Preferences/NotificationKeys.h"
-
-BOOL isLockScreenVisible = YES;
-BOOL isHomeScreenVisible = NO;
-BOOL isScreenOn = YES;
-BOOL isInCall = NO;
-BOOL isInLowPowerMode = NO;
-
-AVQueuePlayer* lockScreenPlayer;
-AVPlayerItem* lockScreenPlayerItem;
-AVPlayerLooper* lockScreenPlayerLooper;
-AVPlayerLayer* lockScreenPlayerLayer;
-
-AVQueuePlayer* homeScreenPlayer;
-AVPlayerItem* homeScreenPlayerItem;
-AVPlayerLooper* homeScreenPlayerLooper;
-AVPlayerLayer* homeScreenPlayerLayer;
-
-// Idle timer for auto-pause
-NSTimer* idleTimer;
-
-// isPlaying cache to avoid redundant volume changes
-BOOL cachedIsPlaying = NO;
-BOOL cachedIsPlayingValid = NO;
-
-NSUserDefaults* preferences;
-BOOL pfEnabled;
-BOOL pfEnableLockScreenWallpaper;
-CGFloat pfLockScreenVolume;
-BOOL pfEnableHomeScreenWallpaper;
-CGFloat pfHomeScreenVolume;
-BOOL pfZoomWallpaper;
-BOOL pfMuteWhenMusicPlays;
-BOOL pfDisableInLowPowerMode;
-CGFloat pfIdleTimeout;
-
 @interface CSCoverSheetViewController : UIViewController
 - (void)adjustFrame;
+- (void)handleTapToWake;
 @end
 
 @interface SBIconController : UIViewController
 - (void)adjustFrame;
+- (void)handleTapToWake;
 @end
 
 @interface CCUIModularControlCenterOverlayViewController : UIViewController

@@ -9,6 +9,28 @@
 	return _specifiers;
 }
 
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    // Nav bar: Respring (left), Reset (right)
+    UIBarButtonItem* respringButton = [[UIBarButtonItem alloc]
+        initWithTitle:@"Respring"
+        style:UIBarButtonItemStylePlain
+        target:self
+        action:@selector(respringPrompt)];
+    [respringButton setTintColor:[UIColor systemRedColor]];
+
+    UIBarButtonItem* resetButton = [[UIBarButtonItem alloc]
+        initWithTitle:@"Reset"
+        style:UIBarButtonItemStylePlain
+        target:self
+        action:@selector(resetPrompt)];
+    [resetButton setTintColor:[UIColor systemOrangeColor]];
+
+    [[self navigationItem] setLeftBarButtonItem:respringButton];
+    [[self navigationItem] setRightBarButtonItem:resetButton];
+}
+
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
     [super setPreferenceValue:value specifier:specifier];
 

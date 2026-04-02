@@ -4,21 +4,11 @@
 <dict>
 	<key>items</key>
 	<array>
+
+		<!-- ═══════════════ Enable Toggle ═══════════════ -->
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
-		</dict>
-		<dict>
-			<key>cellClass</key>
-			<string>CallaSingleContactCell</string>
-			<key>DisplayName</key>
-			<string>Alexandra</string>
-			<key>Username</key>
-			<string>Traurige</string>
-			<key>Url</key>
-			<string>https://github.com/Traurige</string>
-			<key>height</key>
-			<real>58</real>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -31,10 +21,11 @@
 			<string>Enabled</string>
 			<key>label</key>
 			<string>Enable Eneko</string>
-            <key>PostNotification</key>
+			<key>PostNotification</key>
 			<string>dev.traurige.eneko.preferences.reload</string>
 		</dict>
 
+		<!-- ═══════════════ Lock Screen ═══════════════ -->
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
@@ -77,6 +68,26 @@
 		</dict>
 		<dict>
 			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>cellClass</key>
+			<string>GcImagePickerCell</string>
+			<key>label</key>
+			<string>Night Wallpaper</string>
+			<key>defaults</key>
+			<string>dev.traurige.eneko.preferences</string>
+			<key>key</key>
+			<string>LockScreenWallpaperNight</string>
+			<key>usesPhotos</key>
+			<false />
+			<key>usesVideos</key>
+			<true />
+			<key>videoQuality</key>
+			<integer>0</integer>
+			<key>PostNotification</key>
+			<string>dev.traurige.eneko.preferences.reload</string>
+		</dict>
+		<dict>
+			<key>cell</key>
 			<string>PSStaticTextCell</string>
 			<key>label</key>
 			<string>Volume</string>
@@ -102,13 +113,14 @@
 			<string>dev.traurige.eneko.preferences.reload</string>
 		</dict>
 
+		<!-- ═══════════════ Home Screen ═══════════════ -->
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Home Screen</string>
 			<key>footerText</key>
-			<string>Disabling the wallpaper zoom will expose your original wallpaper in the app switcher.</string>
+			<string>Disabling wallpaper zoom will expose your original wallpaper in the app switcher.</string>
 			<key>isStaticText</key>
 			<true />
 		</dict>
@@ -137,6 +149,26 @@
 			<string>dev.traurige.eneko.preferences</string>
 			<key>key</key>
 			<string>HomeScreenWallpaper</string>
+			<key>usesPhotos</key>
+			<false />
+			<key>usesVideos</key>
+			<true />
+			<key>videoQuality</key>
+			<integer>0</integer>
+			<key>PostNotification</key>
+			<string>dev.traurige.eneko.preferences.reload</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>cellClass</key>
+			<string>GcImagePickerCell</string>
+			<key>label</key>
+			<string>Night Wallpaper</string>
+			<key>defaults</key>
+			<string>dev.traurige.eneko.preferences</string>
+			<key>key</key>
+			<string>HomeScreenWallpaperNight</string>
 			<key>usesPhotos</key>
 			<false />
 			<key>usesVideos</key>
@@ -187,6 +219,7 @@
 			<string>dev.traurige.eneko.preferences.reload</string>
 		</dict>
 
+		<!-- ═══════════════ Behavior ═══════════════ -->
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
@@ -247,12 +280,171 @@
 			<key>PostNotification</key>
 			<string>dev.traurige.eneko.preferences.reload</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false />
+			<key>defaults</key>
+			<string>dev.traurige.eneko.preferences</string>
+			<key>key</key>
+			<string>EnableDayNight</string>
+			<key>label</key>
+			<string>Day/Night Mode</string>
+			<key>PostNotification</key>
+			<string>dev.traurige.eneko.preferences.reload</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false />
+			<key>defaults</key>
+			<string>dev.traurige.eneko.preferences</string>
+			<key>key</key>
+			<string>EnablePlaylist</string>
+			<key>label</key>
+			<string>Playlist Mode</string>
+			<key>PostNotification</key>
+			<string>dev.traurige.eneko.preferences.reload</string>
+		</dict>
 
+		<!-- ═══════════════ Effects ═══════════════ -->
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Effects</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>label</key>
+			<string>Dim Opacity</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<real>0</real>
+			<key>defaults</key>
+			<string>dev.traurige.eneko.preferences</string>
+			<key>key</key>
+			<string>DimOpacity</string>
+			<key>min</key>
+			<real>0</real>
+			<key>max</key>
+			<real>0.8</real>
+			<key>showValue</key>
+			<true />
+			<key>isSegmented</key>
+			<false />
+			<key>PostNotification</key>
+			<string>dev.traurige.eneko.preferences.reload</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true />
+			<key>defaults</key>
+			<string>dev.traurige.eneko.preferences</string>
+			<key>key</key>
+			<string>EnableFadeTransition</string>
+			<key>label</key>
+			<string>Fade Transition</string>
+			<key>PostNotification</key>
+			<string>dev.traurige.eneko.preferences.reload</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>label</key>
+			<string>Fade Duration (seconds)</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<real>0.3</real>
+			<key>defaults</key>
+			<string>dev.traurige.eneko.preferences</string>
+			<key>key</key>
+			<string>FadeDuration</string>
+			<key>min</key>
+			<real>0.1</real>
+			<key>max</key>
+			<real>1.0</real>
+			<key>showValue</key>
+			<true />
+			<key>isSegmented</key>
+			<false />
+			<key>PostNotification</key>
+			<string>dev.traurige.eneko.preferences.reload</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true />
+			<key>defaults</key>
+			<string>dev.traurige.eneko.preferences</string>
+			<key>key</key>
+			<string>EnableBlurOnAppOpen</string>
+			<key>label</key>
+			<string>Blur on App Open</string>
+			<key>PostNotification</key>
+			<string>dev.traurige.eneko.preferences.reload</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false />
+			<key>defaults</key>
+			<string>dev.traurige.eneko.preferences</string>
+			<key>key</key>
+			<string>EnableParallax</string>
+			<key>label</key>
+			<string>Parallax Effect</string>
+			<key>PostNotification</key>
+			<string>dev.traurige.eneko.preferences.reload</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>label</key>
+			<string>Parallax Intensity</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<real>10</real>
+			<key>defaults</key>
+			<string>dev.traurige.eneko.preferences</string>
+			<key>key</key>
+			<string>ParallaxIntensity</string>
+			<key>min</key>
+			<real>1</real>
+			<key>max</key>
+			<real>30</real>
+			<key>showValue</key>
+			<true />
+			<key>isSegmented</key>
+			<false />
+			<key>PostNotification</key>
+			<string>dev.traurige.eneko.preferences.reload</string>
+		</dict>
+
+		<!-- ═══════════════ Wallpaper Catalogue ═══════════════ -->
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Wallpaper Catalogue</string>
 			<key>footerText</key>
-			<string>Once your wallpaper has downloaded tap on "More..." and then "Save Video". Simply select it as Lock/Home screen wallpaper above afterwards.</string>
+			<string>Download wallpapers, tap "More..." → "Save Video", then select above.</string>
 			<key>isStaticText</key>
 			<true />
 		</dict>
@@ -265,90 +457,22 @@
 			<string>cataloguePrompt</string>
 		</dict>
 
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>label</key>
-			<string>Tools</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSButtonCell</string>
-			<key>label</key>
-			<string>Respring</string>
-			<key>action</key>
-			<string>respring</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSButtonCell</string>
-			<key>label</key>
-			<string>Reset Preferences</string>
-			<key>action</key>
-			<string>resetPrompt</string>
-		</dict>
-
+		<!-- ═══════════════ Credits (modern footer) ═══════════════ -->
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>footerText</key>
-			<string>Thanks to you and everyone who has helped in any way.</string>
-			<key>isStaticText</key>
-			<true />
-		</dict>
-		<dict>
- 			<key>cell</key>
- 			<string>PSLinkCell</string>
- 			<key>label</key>
- 			<string>Credits</string>
- 			<key>detail</key>
- 			<string>EnekoCreditsListController</string>
- 		</dict>
+			<string>Eneko — Live Video Wallpaper
+Originally created by Traurige (Alexandra)
+Forked &amp; enhanced by tnmod
 
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>footerText</key>
-			<string>Eneko by Traurige</string>
+Day/Night: auto-switch wallpaper (6AM–6PM).
+Playlist: swap video on each unlock.
+Parallax: tilt-responsive motion effect.</string>
 			<key>isStaticText</key>
 			<true />
 		</dict>
-		<dict>
-			<key>cellClass</key>
-			<string>CallaLinkCell</string>
-			<key>label</key>
-			<string>Source Code</string>
-			<key>subtitle</key>
-			<string>It's on GitHub</string>
-			<key>url</key>
-			<string>https://github.com/Traurige/Eneko</string>
-			<key>height</key>
-			<real>52</real>
-		</dict>
-		<dict>
-			<key>cellClass</key>
-			<string>CallaLinkCell</string>
-			<key>label</key>
-			<string>Bug/Feature</string>
-			<key>subtitle</key>
-			<string>Submit an issue</string>
-			<key>url</key>
-			<string>https://github.com/Traurige/Eneko/issues/new/choose</string>
-			<key>height</key>
-			<real>52</real>
-		</dict>
-		<dict>
-			<key>cellClass</key>
-			<string>CallaLinkCell</string>
-			<key>label</key>
-			<string>Donate</string>
-			<key>subtitle</key>
-			<string>I got a Ko-fi</string>
-			<key>url</key>
-			<string>https://ko-fi.com/traurige</string>
-			<key>height</key>
-			<real>52</real>
-		</dict>
+
 	</array>
 	<key>title</key>
 	<string>Eneko</string>
