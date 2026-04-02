@@ -80,11 +80,6 @@ static void handleThermalStateChange() {
     }
 }
 
-static void thermalStateDidChange(CFNotificationCenterRef center, void *observer, CFNotificationName name, const void *object, CFDictionaryRef userInfo) {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        handleThermalStateChange();
-    });
-}
 
 #pragma mark - Helper: should playback be suppressed
 
