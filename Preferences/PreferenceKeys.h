@@ -17,6 +17,7 @@ static NSString* const kPreferenceKeyHomeScreenVolume = @"HomeScreenVolume";
 static NSString* const kPreferenceKeyZoomWallpaper = @"ZoomWallpaper";
 static NSString* const kPreferenceKeyMuteWhenMusicPlays = @"MuteWhenMusicPlays";
 static NSString* const kPreferenceKeyDisableInLowPowerMode = @"DisableInLowPowerMode";
+static NSString* const kPreferenceKeyIdleTimeout = @"IdleTimeout";
 
 static BOOL const kPreferenceKeyEnabledDefaultValue = YES;
 static BOOL const kPreferenceKeyEnableLockScreenWallpaperDefaultValue = NO;
@@ -26,3 +27,4 @@ static CGFloat const kPreferenceKeyHomeScreenVolumeDefaultValue = 0;
 static BOOL const kPreferenceKeyZoomWallpaperDefaultValue = YES;
 static BOOL const kPreferenceKeyMuteWhenMusicPlaysDefaultValue = YES;
 static BOOL const kPreferenceKeyDisableInLowPowerModeDefaultValue = YES;
+static CGFloat const kPreferenceKeyIdleTimeoutDefaultValue = 30; // 30 seconds

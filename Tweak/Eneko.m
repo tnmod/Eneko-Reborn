@@ -3,9 +3,94 @@
 //  Eneko
 //
 //  Created by Alexandra (@Traurige)
+//  Battery optimizations added
 //
 
 #import "Eneko.h"
+
+#pragma mark - Idle Timer
+
+static void cancelIdleTimer() {
+    if (idleTimer) {
+        [idleTimer invalidate];
+        idleTimer = nil;
+    }
+}
+
+static void idleTimerFired() {
+    if (lockScreenPlayer && [lockScreenPlayer rate] > 0) {
+        [lockScreenPlayer pause];
+    }
+    if (homeScreenPlayer && [homeScreenPlayer rate] > 0) {
+        [homeScreenPlayer pause];
+    }
+}
+
+static void resetIdleTimer() {
+    cancelIdleTimer();
+    if (pfIdleTimeout <= 0) return;
+
+    idleTimer = [NSTimer scheduledTimerWithTimeInterval:pfIdleTimeout
+        target:[NSBlockOperation blockOperationWithBlock:^{
+            idleTimerFired();
+        }]
+        selector:@selector(main)
+        userInfo:nil
+        repeats:NO];
+}
+
+#pragma mark - Thermal State Monitoring
+
+static void handleThermalStateChange() {
+    if (@available(iOS 11.0, *)) {
+        NSProcessInfoThermalState state = [[NSProcessInfo processInfo] thermalState];
+        if (state >= NSProcessInfoThermalStateCritical) {
+            // Critical: pause everything
+            if (lockScreenPlayer) {
+                [lockScreenPlayer pause];
+                [lockScreenPlayerLayer setHidden:YES];
+            }
+            if (homeScreenPlayer) {
+                [homeScreenPlayer pause];
+                [homeScreenPlayerLayer setHidden:YES];
+            }
+        } else if (state >= NSProcessInfoThermalStateSerious) {
+            // Serious: reduce playback rate to half
+            if (lockScreenPlayer && [lockScreenPlayer rate] > 0) {
+                [lockScreenPlayer setRate:0.5];
+            }
+            if (homeScreenPlayer && [homeScreenPlayer rate] > 0) {
+                [homeScreenPlayer setRate:0.5];
+            }
+        } else {
+            // Normal/Fair: restore full rate and visibility
+            if (lockScreenPlayer && isLockScreenVisible && isScreenOn) {
+                [lockScreenPlayerLayer setHidden:NO];
+                if ([lockScreenPlayer rate] != 1.0 && [lockScreenPlayer rate] > 0) {
+                    [lockScreenPlayer setRate:1.0];
+                }
+            }
+            if (homeScreenPlayer && isHomeScreenVisible && isScreenOn) {
+                [homeScreenPlayerLayer setHidden:NO];
+                if ([homeScreenPlayer rate] != 1.0 && [homeScreenPlayer rate] > 0) {
+                    [homeScreenPlayer setRate:1.0];
+                }
+            }
+        }
+    }
+}
+
+static void thermalStateDidChange(CFNotificationCenterRef center, void *observer, CFNotificationName name, const void *object, CFDictionaryRef userInfo) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        handleThermalStateChange();
+    });
+}
+
+#pragma mark - Helper: should playback be suppressed
+
+static BOOL shouldSuppressPlayback() {
+    return (pfDisableInLowPowerMode && isInLowPowerMode) || isInCall;
+}
 
 #pragma mark - Lock screen class hooks
 
@@ -90,7 +175,7 @@ static void SBIconController_adjustFrame(SBIconController* self, SEL _cmd) {
     [homeScreenPlayerLayer setFrame:[[[self view] layer] bounds]];
 }
 
-#pragma mark - Manangement class hooks
+#pragma mark - Management class hooks
 
 static void (* orig_CSCoverSheetViewController_viewWillAppear)(CSCoverSheetViewController* self, SEL _cmd, BOOL animated);
 static void override_CSCoverSheetViewController_viewWillAppear(CSCoverSheetViewController* self, SEL _cmd, BOOL animated) {
@@ -98,7 +183,7 @@ static void override_CSCoverSheetViewController_viewWillAppear(CSCoverSheetViewC
 
     isLockScreenVisible = YES;
 
-    if ((pfDisableInLowPowerMode && isInLowPowerMode) || isInCall) {
+    if (shouldSuppressPlayback()) {
         return;
     }
 
@@ -110,6 +195,8 @@ static void override_CSCoverSheetViewController_viewWillAppear(CSCoverSheetViewC
     if (homeScreenPlayer && isHomeScreenVisible) {
         [homeScreenPlayer pause];
     }
+
+    resetIdleTimer();
 }
 
 static void (* orig_CSCoverSheetViewController_viewWillDisappear)(CSCoverSheetViewController* self, SEL _cmd, BOOL animated);
@@ -118,7 +205,7 @@ static void override_CSCoverSheetViewController_viewWillDisappear(CSCoverSheetVi
 
     isLockScreenVisible = NO;
 
-    if ((pfDisableInLowPowerMode && isInLowPowerMode) || isInCall) {
+    if (shouldSuppressPlayback()) {
         return;
     }
 
@@ -128,6 +215,7 @@ static void override_CSCoverSheetViewController_viewWillDisappear(CSCoverSheetVi
 
     if (homeScreenPlayer && isHomeScreenVisible) {
         [homeScreenPlayer play];
+        resetIdleTimer();
     }
 }
 
@@ -137,7 +225,7 @@ static void override_SBIconController_viewWillAppear(SBIconController* self, SEL
 
     isHomeScreenVisible = YES;
 
-    if ((pfDisableInLowPowerMode && isInLowPowerMode) || isInCall) {
+    if (shouldSuppressPlayback()) {
         return;
     }
 
@@ -149,6 +237,8 @@ static void override_SBIconController_viewWillAppear(SBIconController* self, SEL
     if (lockScreenPlayer && isLockScreenVisible) {
         [lockScreenPlayer pause];
     }
+
+    resetIdleTimer();
 }
 
 static void (* orig_SBIconController_viewWillDisappear)(SBIconController* self, SEL _cmd, BOOL animated);
@@ -157,7 +247,7 @@ static void override_SBIconController_viewWillDisappear(SBIconController* self, 
 
     isHomeScreenVisible = NO;
 
-    if ((pfDisableInLowPowerMode && isInLowPowerMode) || isInCall) {
+    if (shouldSuppressPlayback()) {
         return;
     }
 
@@ -167,6 +257,7 @@ static void override_SBIconController_viewWillDisappear(SBIconController* self, 
 
     if (lockScreenPlayer && isLockScreenVisible) {
         [lockScreenPlayer play];
+        resetIdleTimer();
     }
 }
 
@@ -174,7 +265,7 @@ static void (* orig_CCUIModularControlCenterOverlayViewController_viewWillAppear
 static void override_CCUIModularControlCenterOverlayViewController_viewWillAppear(CCUIModularControlCenterOverlayViewController* self, SEL _cmd, BOOL animated) {
     orig_CCUIModularControlCenterOverlayViewController_viewWillAppear(self, _cmd, animated);
 
-    if ((pfDisableInLowPowerMode && isInLowPowerMode) || isInCall) {
+    if (shouldSuppressPlayback()) {
         return;
     }
 
@@ -185,13 +276,15 @@ static void override_CCUIModularControlCenterOverlayViewController_viewWillAppea
     if (homeScreenPlayer && isHomeScreenVisible) {
         [homeScreenPlayer pause];
     }
+
+    cancelIdleTimer();
 }
 
 static void (* orig_CCUIModularControlCenterOverlayViewController_viewWillDisappear)(CCUIModularControlCenterOverlayViewController* self, SEL _cmd, BOOL animated);
 static void override_CCUIModularControlCenterOverlayViewController_viewWillDisappear(CCUIModularControlCenterOverlayViewController* self, SEL _cmd, BOOL animated) {
     orig_CCUIModularControlCenterOverlayViewController_viewWillDisappear(self, _cmd, animated);
 
-    if ((pfDisableInLowPowerMode && isInLowPowerMode) || isInCall) {
+    if (shouldSuppressPlayback()) {
         return;
     }
 
@@ -202,6 +295,8 @@ static void override_CCUIModularControlCenterOverlayViewController_viewWillDisap
     if (homeScreenPlayer && isHomeScreenVisible) {
         [homeScreenPlayer play];
     }
+
+    resetIdleTimer();
 }
 
 static void (* orig_SBBacklightController_turnOnScreenFullyWithBacklightSource)(SBBacklightController* self, SEL _cmd, int source);
@@ -215,7 +310,7 @@ static void override_SBBacklightController_turnOnScreenFullyWithBacklightSource(
     isScreenOn = YES;
     isLockScreenVisible = YES;
 
-    if ((pfDisableInLowPowerMode && isInLowPowerMode) || isInCall) {
+    if (shouldSuppressPlayback()) {
         return;
     }
 
@@ -226,6 +321,8 @@ static void override_SBBacklightController_turnOnScreenFullyWithBacklightSource(
     if (homeScreenPlayer) {
         [homeScreenPlayer pause];
     }
+
+    resetIdleTimer();
 }
 
 static void (* orig_SBLockScreenManager_lockUIFromSource_withOptions)(SBLockScreenManager* self, SEL _cmd, int source, id options);
@@ -241,6 +338,8 @@ static void override_SBLockScreenManager_lockUIFromSource_withOptions(SBLockScre
     if (homeScreenPlayer) {
         [homeScreenPlayer pause];
     }
+
+    cancelIdleTimer();
 }
 
 static void (* orig_SpringBoard_noteInterfaceOrientationChanged_duration_logMessage)(SpringBoard* self, SEL _cmd, long long orientation, double duration, NSString* logMessage);
@@ -259,6 +358,13 @@ static BOOL override_SBMediaController_isPlaying(SBMediaController* self, SEL _c
     }
 
     BOOL orig = orig_SBMediaController_isPlaying(self, _cmd);
+
+    // Only adjust volume when playback state actually changes (cached check)
+    if (cachedIsPlayingValid && orig == cachedIsPlaying) {
+        return orig;
+    }
+    cachedIsPlaying = orig;
+    cachedIsPlayingValid = YES;
 
     if (orig) {
         if (lockScreenPlayer && ![lockScreenPlayer isMuted] && pfMuteWhenMusicPlays) {
@@ -299,6 +405,8 @@ static int override_TUCall_status(TUCall* self, SEL _cmd) {
         if (homeScreenPlayer) {
             [homeScreenPlayer pause];
         }
+
+        cancelIdleTimer();
     } else if (orig == 6) {
         isInCall = NO;
 
@@ -319,6 +427,8 @@ static int override_TUCall_status(TUCall* self, SEL _cmd) {
                 [lockScreenPlayer pause];
             }
         }
+
+        resetIdleTimer();
     }
 
     return orig;
@@ -328,7 +438,7 @@ static void (* orig_SiriUIBackgroundBlurView_removeFromSuperview)(SiriUIBackgrou
 static void override_SiriUIBackgroundBlurView_removeFromSuperview(SiriUIBackgroundBlurView* self, SEL _cmd) {
     orig_SiriUIBackgroundBlurView_removeFromSuperview(self, _cmd);
 
-    if ((pfDisableInLowPowerMode && isInLowPowerMode) || isInCall) {
+    if (shouldSuppressPlayback()) {
         return;
     }
 
@@ -337,13 +447,15 @@ static void override_SiriUIBackgroundBlurView_removeFromSuperview(SiriUIBackgrou
     } else if (homeScreenPlayer && isHomeScreenVisible && !isLockScreenVisible) {
         [homeScreenPlayer play];
     }
+
+    resetIdleTimer();
 }
 
-static void (* orig_SBDashBoardCameraPageViewController_viewWillAppear)(SBDashBoardCameraPageViewController* self, SEL _cmd, BOOL animated);
-static void override_SBDashBoardCameraPageViewController_viewWillAppear(SBDashBoardCameraPageViewController* self, SEL _cmd, BOOL animated) {
-    orig_SBDashBoardCameraPageViewController_viewWillAppear(self, _cmd, animated);
+static void (* orig_SBDashBoardCameraPageViewController_viewDidAppear)(SBDashBoardCameraPageViewController* self, SEL _cmd, BOOL animated);
+static void override_SBDashBoardCameraPageViewController_viewDidAppear(SBDashBoardCameraPageViewController* self, SEL _cmd, BOOL animated) {
+    orig_SBDashBoardCameraPageViewController_viewDidAppear(self, _cmd, animated);
 
-    if ((pfDisableInLowPowerMode && isInLowPowerMode) || isInCall) {
+    if (shouldSuppressPlayback()) {
         return;
     }
 
@@ -352,26 +464,33 @@ static void override_SBDashBoardCameraPageViewController_viewWillAppear(SBDashBo
     }
 
     isLockScreenVisible = NO;
+    cancelIdleTimer();
 }
 
-static void (* orig_SBDashBoardCameraPageViewController_viewWillDisappear)(SBDashBoardCameraPageViewController* self, SEL _cmd, BOOL animated);
-static void override_SBDashBoardCameraPageViewController_viewWillDisappear(SBDashBoardCameraPageViewController* self, SEL _cmd, BOOL animated) {
-    orig_SBDashBoardCameraPageViewController_viewWillDisappear(self, _cmd, animated);
+static void (* orig_SBDashBoardCameraPageViewController_viewDidDisappear)(SBDashBoardCameraPageViewController* self, SEL _cmd, BOOL animated);
+static void override_SBDashBoardCameraPageViewController_viewDidDisappear(SBDashBoardCameraPageViewController* self, SEL _cmd, BOOL animated) {
+    orig_SBDashBoardCameraPageViewController_viewDidDisappear(self, _cmd, animated);
 
     isLockScreenVisible = YES;
 
-    if ((pfDisableInLowPowerMode && isInLowPowerMode) || isInCall) {
+    if (shouldSuppressPlayback()) {
         return;
     }
 
     if (lockScreenPlayer && isLockScreenVisible) {
         [lockScreenPlayer play];
     }
+
+    resetIdleTimer();
 }
 
 static void (* orig_CSModalButton_didMoveToWindow)(CSModalButton* self, SEL _cmd);
 static void override_CSModalButton_didMoveToWindow(CSModalButton* self, SEL _cmd) {
     orig_CSModalButton_didMoveToWindow(self, _cmd);
+
+    if (shouldSuppressPlayback()) {
+        return;
+    }
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         if (lockScreenPlayer) {
@@ -381,12 +500,18 @@ static void override_CSModalButton_didMoveToWindow(CSModalButton* self, SEL _cmd
         if (homeScreenPlayer) {
             [homeScreenPlayer pause];
         }
+
+        cancelIdleTimer();
     });
 }
 
 static void (* orig_CSModalButton_removeFromSuperview)(CSModalButton* self, SEL _cmd);
 static void override_CSModalButton_removeFromSuperview(CSModalButton* self, SEL _cmd) {
     orig_CSModalButton_removeFromSuperview(self, _cmd);
+
+    if (shouldSuppressPlayback()) {
+        return;
+    }
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         if (lockScreenPlayer) {
@@ -396,6 +521,8 @@ static void override_CSModalButton_removeFromSuperview(CSModalButton* self, SEL 
         if (homeScreenPlayer) {
             [homeScreenPlayer pause];
         }
+
+        resetIdleTimer();
     });
 }
 
@@ -416,13 +543,15 @@ static void override_SBLockScreenEmergencyCallViewController_viewWillDisappear(S
 
     isLockScreenVisible = YES;
 
-    if ((pfDisableInLowPowerMode && isInLowPowerMode) || isInCall) {
+    if (shouldSuppressPlayback()) {
         return;
     }
 
     if (lockScreenPlayer) {
         [lockScreenPlayer play];
     }
+
+    resetIdleTimer();
 }
 
 static BOOL (* orig_NSProcessInfo_isLowPowerModeEnabled)(NSProcessInfo* self, SEL _cmd);
@@ -445,6 +574,8 @@ static BOOL override_NSProcessInfo_isLowPowerModeEnabled(NSProcessInfo* self, SE
                 [homeScreenPlayerLayer setHidden:YES];
                 [homeScreenPlayer pause];
             }
+
+            cancelIdleTimer();
         });
     } else {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -455,6 +586,8 @@ static BOOL override_NSProcessInfo_isLowPowerModeEnabled(NSProcessInfo* self, SE
                 [homeScreenPlayer play];
                 [homeScreenPlayerLayer setHidden:NO];
             }
+
+            resetIdleTimer();
         });
     }
 
@@ -464,7 +597,10 @@ static BOOL override_NSProcessInfo_isLowPowerModeEnabled(NSProcessInfo* self, SE
 #pragma mark - Preferences
 
 static void load_preferences() {
-    preferences = [[NSUserDefaults alloc] initWithSuiteName:kPreferencesIdentifier];
+    if (!preferences) {
+        preferences = [[NSUserDefaults alloc] initWithSuiteName:kPreferencesIdentifier];
+    }
+    [preferences synchronize];
 
     [preferences registerDefaults:@{
         kPreferenceKeyEnabled: @(kPreferenceKeyEnabledDefaultValue),
@@ -474,7 +610,8 @@ static void load_preferences() {
         kPreferenceKeyHomeScreenVolume: @(kPreferenceKeyHomeScreenVolumeDefaultValue),
         kPreferenceKeyZoomWallpaper: @(kPreferenceKeyZoomWallpaperDefaultValue),
         kPreferenceKeyMuteWhenMusicPlays: @(kPreferenceKeyMuteWhenMusicPlaysDefaultValue),
-        kPreferenceKeyDisableInLowPowerMode: @(kPreferenceKeyDisableInLowPowerModeDefaultValue)
+        kPreferenceKeyDisableInLowPowerMode: @(kPreferenceKeyDisableInLowPowerModeDefaultValue),
+        kPreferenceKeyIdleTimeout: @(kPreferenceKeyIdleTimeoutDefaultValue)
     }];
 
     pfEnabled = [[preferences objectForKey:kPreferenceKeyEnabled] boolValue];
@@ -485,6 +622,10 @@ static void load_preferences() {
     pfZoomWallpaper = [[preferences objectForKey:kPreferenceKeyZoomWallpaper] boolValue];
     pfMuteWhenMusicPlays = [[preferences objectForKey:kPreferenceKeyMuteWhenMusicPlays] boolValue];
     pfDisableInLowPowerMode = [[preferences objectForKey:kPreferenceKeyDisableInLowPowerMode] boolValue];
+    pfIdleTimeout = [[preferences objectForKey:kPreferenceKeyIdleTimeout] floatValue];
+
+    // Invalidate isPlaying cache on preference reload
+    cachedIsPlayingValid = NO;
 }
 
 __attribute((constructor)) static void initialize() {
@@ -516,8 +657,8 @@ __attribute((constructor)) static void initialize() {
     MSHookMessageEx(objc_getClass("SBMediaController"), @selector(isPlaying), (IMP)&override_SBMediaController_isPlaying, (IMP *)&orig_SBMediaController_isPlaying);
     MSHookMessageEx(objc_getClass("TUCall"), @selector(status), (IMP)&override_TUCall_status, (IMP *)&orig_TUCall_status);
     MSHookMessageEx(objc_getClass("SiriUIBackgroundBlurView"), @selector(removeFromSuperview), (IMP)&override_SiriUIBackgroundBlurView_removeFromSuperview, (IMP *)&orig_SiriUIBackgroundBlurView_removeFromSuperview);
-    MSHookMessageEx(objc_getClass("SBDashBoardCameraPageViewController"), @selector(viewWillAppear:), (IMP)&override_SBDashBoardCameraPageViewController_viewWillAppear, (IMP *)&orig_SBDashBoardCameraPageViewController_viewWillAppear);
-    MSHookMessageEx(objc_getClass("SBDashBoardCameraPageViewController"), @selector(viewWillDisappear:), (IMP)&override_SBDashBoardCameraPageViewController_viewWillDisappear, (IMP *)&orig_SBDashBoardCameraPageViewController_viewWillDisappear);
+    MSHookMessageEx(objc_getClass("SBDashBoardCameraPageViewController"), @selector(viewDidAppear:), (IMP)&override_SBDashBoardCameraPageViewController_viewDidAppear, (IMP *)&orig_SBDashBoardCameraPageViewController_viewDidAppear);
+    MSHookMessageEx(objc_getClass("SBDashBoardCameraPageViewController"), @selector(viewDidDisappear:), (IMP)&override_SBDashBoardCameraPageViewController_viewDidDisappear, (IMP *)&orig_SBDashBoardCameraPageViewController_viewDidDisappear);
     MSHookMessageEx(objc_getClass("CSModalButton"), @selector(didMoveToWindow), (IMP)&override_CSModalButton_didMoveToWindow, (IMP *)&orig_CSModalButton_didMoveToWindow);
     MSHookMessageEx(objc_getClass("CSModalButton"), @selector(removeFromSuperview), (IMP)&override_CSModalButton_removeFromSuperview, (IMP *)&orig_CSModalButton_removeFromSuperview);
     MSHookMessageEx(objc_getClass("SBLockScreenEmergencyCallViewController"), @selector(viewWillAppear:), (IMP)&override_SBLockScreenEmergencyCallViewController_viewWillAppear, (IMP *)&orig_SBLockScreenEmergencyCallViewController_viewWillAppear);
@@ -525,4 +666,12 @@ __attribute((constructor)) static void initialize() {
     MSHookMessageEx(objc_getClass("NSProcessInfo"), @selector(isLowPowerModeEnabled), (IMP)&override_NSProcessInfo_isLowPowerModeEnabled, (IMP *)&orig_NSProcessInfo_isLowPowerModeEnabled);
 
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)load_preferences, (CFStringRef)kNotificationKeyPreferencesReload, NULL, (CFNotificationSuspensionBehavior)kNilOptions);
+
+    // Register for thermal state change notifications
+    [[NSNotificationCenter defaultCenter] addObserverForName:NSProcessInfoThermalStateDidChangeNotification
+                                                      object:nil
+                                                       queue:[NSOperationQueue mainQueue]
+                                                  usingBlock:^(NSNotification * _Nonnull note) {
+        handleThermalStateChange();
+    }];
 }

@@ -221,6 +221,32 @@
 			<key>PostNotification</key>
 			<string>dev.traurige.eneko.preferences.reload</string>
 		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>label</key>
+			<string>Idle Timeout (seconds)</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<real>30</real>
+			<key>defaults</key>
+			<string>dev.traurige.eneko.preferences</string>
+			<key>key</key>
+			<string>IdleTimeout</string>
+			<key>min</key>
+			<real>0</real>
+			<key>max</key>
+			<real>120</real>
+			<key>showValue</key>
+			<true />
+			<key>isSegmented</key>
+			<false />
+			<key>PostNotification</key>
+			<string>dev.traurige.eneko.preferences.reload</string>
+		</dict>
 
 		<dict>
 			<key>cell</key>

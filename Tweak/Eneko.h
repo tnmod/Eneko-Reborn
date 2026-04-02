@@ -28,6 +28,13 @@ AVPlayerItem* homeScreenPlayerItem;
 AVPlayerLooper* homeScreenPlayerLooper;
 AVPlayerLayer* homeScreenPlayerLayer;
 
+// Idle timer for auto-pause
+NSTimer* idleTimer;
+
+// isPlaying cache to avoid redundant volume changes
+BOOL cachedIsPlaying = NO;
+BOOL cachedIsPlayingValid = NO;
+
 NSUserDefaults* preferences;
 BOOL pfEnabled;
 BOOL pfEnableLockScreenWallpaper;
@@ -37,6 +44,7 @@ CGFloat pfHomeScreenVolume;
 BOOL pfZoomWallpaper;
 BOOL pfMuteWhenMusicPlays;
 BOOL pfDisableInLowPowerMode;
+CGFloat pfIdleTimeout;
 
 @interface CSCoverSheetViewController : UIViewController
 - (void)adjustFrame;
